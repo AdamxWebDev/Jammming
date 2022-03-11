@@ -16,6 +16,7 @@ const Spotify = {
         if (accessTokenMatch && expiresInMatch) {
             accessToken = accessTokenMatch[1];
             const expiresIn = Number(expiresInMatch[1]);
+            accessToken = accessToken.replace('=', '');
             // This clears the params, allowing us to grab a new access token when it expires. 
             window.setTimeout(() => accessToken = '', expiresIn * 1000);
             window.history.pushState('Access Token', null, '/');
@@ -26,27 +27,28 @@ const Spotify = {
         }
     },
 
-    async search(term) {
+    search(term) {
         const accessToken = Spotify.getAccessToken();
-        const response = await fetch(`https://api.spotify.com/v1/search?type=track&q=${term}`, {
+        return fetch(`https://api.spotify.com/v1/search?type=track&q=${term}`,{
             headers: {
                 Authorization: `Bearer ${accessToken}`
             }
+        }).then(response => response.json()
+        ).then(jsonResponse => {
+            if (!jsonResponse.tracks) {
+                return [];
+            }
+            return jsonResponse.tracks.items.map(track => ({
+                id: track.id,
+                name: track.name,
+                artist: track.artists[0].name,
+                album: track.album.name,
+                uri: track.uri 
+            }));
         });
-        const jsonResponse = await response.json();
-        if (!jsonResponse.tracks) {
-            return [];
-        }
-        return jsonResponse.tracks.items.map(track => ({
-            id: track.id,
-            name: track.name,
-            artist: track.artist,
-            album: track.album,
-            uri: track.uri
-        }));
     },
 
-    async savePlaylist(name, trackUris) {
+    savePlaylist(name, trackUris) {
         if (!name || !trackUris.length) {
             return;
         }
@@ -55,24 +57,26 @@ const Spotify = {
         const headers = { Authorization: `Bearer ${accessToken}`};
         let userId;
 
-        const response = await fetch('https://api.spotify.com/v1/me', { headers: headers }
-        );
-        const jsonResponse = await response.json();
-        userId = jsonResponse.id;
-        const response_1 = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`,
+        return fetch('https://api.spotify.com/v1/me', { headers: headers }
+        ).then(response => response.json()
+        ).then(jsonResponse => {
+            userId = jsonResponse.id
+            return fetch(`https://api.spotify.com/v1/users/${userId}/playlists`,
             {
                 headers: headers,
                 method: 'POST',
-                body: JSON.stringify({ name: name })
-            });
-        const jsonResponse_1 = await response_1.json();
-        const playlistId = jsonResponse_1.id;
-        return await fetch(`https://api.spotify.com/v1/users/${userId}/playlists/${playlistId}/tracks`,
-            {
-                headers: headers,
-                method: 'POST',
-                body: JSON.stringify({ uris: trackUris })
-            });
+                body: JSON.stringify( { name: name })
+            }).then(response => response.json()
+            ).then(jsonResponse => {
+                const playlistId = jsonResponse.id;
+                return fetch(`https://api.spotify.com/v1/users/${userId}/playlists/${playlistId}/tracks`,
+                {
+                    headers: headers,
+                    method: 'POST',
+                    body: JSON.stringify({ uris: trackUris })
+                })
+            })
+        })
     }
 
 }
