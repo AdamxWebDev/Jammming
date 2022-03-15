@@ -1,12 +1,15 @@
 import React from 'react';
 import './searchbar.css'
 
+let myStorage = window.localStorage;
+//myStorage.setItem('value', '');
+
 export class SearchBar extends React.Component {
     constructor(props) {
         super(props)
 
         this.state = {
-            term: ""
+            term: myStorage.getItem('value')
         }
 
         this.search = this.search.bind(this);
@@ -14,7 +17,9 @@ export class SearchBar extends React.Component {
     }
 
     search() {
-       this.props.onSearch(this.state.term);
+        myStorage.setItem('value', this.state.term)
+        this.props.onSearch(this.state.term);
+        
     }
 
     handleTermChange(e) {
@@ -24,7 +29,7 @@ export class SearchBar extends React.Component {
     render() {
         return (
         <div className="SearchBar">
-            <input placeholder="Enter A Song, Album, or Artist" onChange={this.handleTermChange}/>
+            <input placeholder="Enter A Song, Album, or Artist" onChange={this.handleTermChange} value={this.state.term}/>
             <button className="SearchButton" onClick={this.search}>SEARCH</button>
         </div>
         )
