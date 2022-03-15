@@ -2,7 +2,6 @@ import React from 'react';
 import './searchbar.css'
 
 let myStorage = window.localStorage;
-//myStorage.setItem('value', '');
 
 export class SearchBar extends React.Component {
     constructor(props) {
